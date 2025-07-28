@@ -477,3 +477,74 @@ iframe.highlight-flash {
 .CodeMirror-dialog button:hover {
     background: #777;
 }
+
+/* Media Queries pour la responsivité */
+@media (max-width: 1023px) { /* Pour les écrans plus petits que 'lg' (1024px) */
+    .main-layout-container {
+        flex-direction: column; /* Empile les colonnes verticalement */
+        gap: 1rem; /* Espacement entre les sections empilées */
+    }
+
+    .code-editor-grid {
+        grid-template-columns: 1fr; /* Une seule colonne pour les éditeurs */
+        grid-template-rows: auto; /* Hauteur automatique pour les lignes */
+        gap: 1rem; /* Espacement entre les éditeurs empilés */
+    }
+
+    .editor-panel {
+        padding: 0.5rem; /* Réduit le padding des panneaux */
+    }
+
+    .CodeMirror {
+        font-size: 0.85rem; /* Réduit la taille de police dans les éditeurs */
+    }
+
+    /* Ajustements pour les boutons d'action et icônes */
+    .action-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+    }
+    .copy-icon, .search-icon {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media (max-width: 767px) { /* Pour les écrans encore plus petits (mobiles) */
+    body {
+        padding: 0.25rem; /* Réduit encore plus le padding du corps */
+    }
+    h1 {
+        font-size: 1.75rem; /* Taille de titre plus petite sur mobile */
+        margin-bottom: 0.25rem;
+    }
+    .explanation-panel {
+        width: 100%; /* Prend toute la largeur sur mobile */
+        left: -100%; /* Cache complètement sur le côté */
+        padding: 1rem;
+    }
+    .explanation-panel.active {
+        left: 0;
+    }
+    #openExplanationPanelBtn {
+        top: 0.5rem;
+        left: 0.5rem;
+        padding: 0.5rem;
+        width: 40px;
+        height: 40px;
+    }
+    .file-input-container {
+        flex-direction: column; /* Empile les éléments du chargeur de fichier */
+        align-items: stretch; /* Étire les éléments pour prendre toute la largeur */
+        padding: 0.75rem;
+    }
+    .file-input-container label {
+        width: 100%;
+        text-align: center;
+        padding: 0.75rem 1rem;
+    }
+    .file-name-display {
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+}
