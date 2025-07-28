@@ -33,7 +33,7 @@ const explanationPanel = document.getElementById('explanationPanel');
 const explanationContent = document.getElementById('explanationContent');
 const closeExplanationBtn = document.getElementById('closeExplanationBtn');
 const openExplanationPanelBtn = document.getElementById('openExplanationPanelBtn');
-const explanationBackdrop = document.getElementById('explanationBackdrop'); // Correction ici
+const explanationBackdrop = document.getElementById('explanationBackdrop');
 
 // Éléments pour l'aide à la génération IA
 const aiGenerationPrompt = document.getElementById('aiGenerationPrompt');
@@ -238,7 +238,7 @@ function highlightHtmlCode(elementOuterHTML) {
             } else if (char === '>' && i + 1 < rawHtmlContent.length && rawHtmlContent[i+1] === '<') {
                 // Skip whitespace between tags
             } else {
-                tempNormalizedIndex++;
+                tempNormalizedEndIndex++;
             }
             realEndIndex = i + 1;
         }
@@ -289,8 +289,18 @@ function updatePreview() {
     const cssContent = cssCode.getValue();
     const jsContent = jsCode.getValue();
 
-    // Serialize loadedImagesData to a JSON string to pass to the iframe
-    const imagesDataJson = JSON.stringify(loadedImagesData);
+    // NOUVELLE LOGIQUE : Remplacer les placeholders d'images par les Data URLs réelles
+    // avant d'écrire le HTML dans l'iframe.
+    for (const fileName in loadedImagesData) {
+        if (loadedImagesData.hasOwnProperty(fileName)) {
+            const dataURL = loadedImagesData[fileName];
+            // Regex pour trouver la balise img avec le data-local-image-name correspondant
+            // et remplacer son src par la dataURL réelle.
+            // On utilise un groupe de capture pour conserver les autres attributs.
+            const regex = new RegExp(`<img src="https://placehold.co/150x100/cccccc/000000\\?text=Image\\+Locale" data-local-image-name="${fileName}"([^>]*)>`, 'g');
+            htmlContent = htmlContent.replace(regex, `<img src="${dataURL}" data-local-image-name="${fileName}"$1>`);
+        }
+    }
 
     // Création du contenu HTML complet pour l'iframe
     const content = `
@@ -301,20 +311,6 @@ function updatePreview() {
         </head>
         <body>
             ${htmlContent}
-            <script>
-                // CORRECTION ICI : Utilisation de 'var' pour permettre la re-déclaration
-                var iframeLoadedImagesData = ${imagesDataJson}; // Inject the data
-
-                document.addEventListener('DOMContentLoaded', () => {
-                    const imgElements = document.querySelectorAll('img[data-local-image-name]');
-                    imgElements.forEach(img => {
-                        const fileName = img.getAttribute('data-local-image-name');
-                        if (iframeLoadedImagesData[fileName]) {
-                            img.src = iframeLoadedImagesData[fileName];
-                        }
-                    });
-                });
-            <\/script>
             <script>${jsContent}<\/script>
         </body>
         </html>
@@ -406,10 +402,8 @@ async function explainCode(editor, language) {
         return;
     }
 
-    // Ouvre le panneau d'explication
-    explanationPanel.classList.add('active');
-    explanationBackdrop.classList.add('active');
-    openExplanationPanelBtn.classList.add('hidden'); // Cache le bouton d'ouverture
+    // Ajoute la question de l'utilisateur à l'historique
+    appendExplanation(`**Question (Expliquer ${language}) :**\n\`\`\`${language.toLowerCase()}\n${codeContent}\n\`\`\``, 'user');
 
     // Affiche un message de chargement temporaire dans le panneau d'explication
     appendExplanation('<p class="text-center text-gray-500">Explication du code en cours...</p>', 'loading');
@@ -453,7 +447,7 @@ async function explainCode(editor, language) {
             const explanation = result.explanation;
             
             // RENDU MARKDOWN ICI : Utilise marked.js pour convertir le Markdown en HTML
-            appendExplanation(marked.parse(explanation), 'success');
+            appendExplanation(marked.parse(explanation), 'ai'); // Type 'ai' pour les réponses de l'IA
             
             // Masque la messageBox de chargement après l'affichage de l'explication
             showMessageBox('', 'info'); // Efface le message et le masque
@@ -478,6 +472,9 @@ async function generateCode() {
         showMessageBox('Veuillez entrer une description pour générer du code.', 'info');
         return;
     }
+
+    // Ajoute la question de l'utilisateur à l'historique
+    appendExplanation(`**Question (Génération de code) :**\n${promptText}`, 'user');
 
     // Ouvre le panneau d'explication
     explanationPanel.classList.add('active');
@@ -519,7 +516,7 @@ async function generateCode() {
         // La réponse de la fonction Netlify contient le code généré sous la clé 'explanation'
         if (result.explanation) {
             const generatedCodeMarkdown = result.explanation;
-            appendExplanation(marked.parse(generatedCodeMarkdown), 'success');
+            appendExplanation(marked.parse(generatedCodeMarkdown), 'ai'); // Type 'ai' pour les réponses de l'IA
             showMessageBox('Code généré avec succès !', 'success');
         } else {
             appendExplanation('<p class="text-center text-red-500">Erreur: Aucune génération de code. La structure de la réponse de l\'IA est inattendue.</p>', 'error');
@@ -534,41 +531,58 @@ async function generateCode() {
 
 /**
  * Ajoute du contenu à l'élément explanationContent, avec un horodatage et un type.
- * @param {string} contentHtml Le contenu HTML à ajouter.
- * @param {string} type Le type de message (info, success, error, loading).
+ * @param {string} contentHtml Le contenu HTML (ou Markdown qui sera parsé) à ajouter.
+ * @param {string} type Le type de message ('user', 'ai', 'loading', 'error').
  */
 function appendExplanation(contentHtml, type = 'info') {
     const timestamp = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     let headerClass = '';
     let headerText = '';
+    let bgColor = '';
+    let textColor = '';
 
     switch (type) {
+        case 'user':
+            headerClass = 'text-blue-700';
+            headerText = 'Vous';
+            bgColor = 'bg-blue-50'; // Fond très clair pour l'utilisateur
+            textColor = 'text-blue-800';
+            break;
+        case 'ai':
+            headerClass = 'text-green-700';
+            headerText = 'Assistant IA';
+            bgColor = 'bg-green-50'; // Fond très clair pour l'IA
+            textColor = 'text-green-800';
+            break;
         case 'loading':
             headerClass = 'text-yellow-600';
             headerText = 'Chargement...';
+            bgColor = 'bg-yellow-50';
+            textColor = 'text-yellow-800';
             break;
         case 'error':
             headerClass = 'text-red-600';
             headerText = 'Erreur';
+            bgColor = 'bg-red-50';
+            textColor = 'text-red-800';
             break;
-        case 'success':
-            headerClass = 'text-green-600';
-            headerText = 'Réponse IA';
-            break;
-        default:
+        default: // info
             headerClass = 'text-gray-600';
             headerText = 'Info';
+            bgColor = 'bg-gray-50';
+            textColor = 'text-gray-800';
             break;
     }
 
     const newEntry = document.createElement('div');
-    newEntry.className = 'mb-4 p-3 rounded-lg shadow-sm bg-gray-50'; // Style de base pour chaque entrée
+    // Utilise les classes Tailwind pour le style de chaque entrée
+    newEntry.className = `mb-4 p-3 rounded-lg shadow-sm ${bgColor} ${textColor}`;
     newEntry.innerHTML = `
-        <div class="flex justify-between items-center mb-2">
+        <div class="flex justify-between items-center mb-2 border-b border-gray-200 pb-1">
             <span class="text-sm font-semibold ${headerClass}">${headerText}</span>
             <span class="text-xs text-gray-500">${timestamp}</span>
         </div>
-        <div>${contentHtml}</div>
+        <div class="prose max-w-none">${marked.parse(contentHtml)}</div> <!-- marked.parse ici pour le Markdown -->
     `;
     explanationContent.appendChild(newEntry);
 
@@ -602,7 +616,7 @@ closeExplanationBtn.addEventListener('click', () => {
     explanationPanel.classList.remove('active');
     explanationBackdrop.classList.remove('active');
     openExplanationPanelBtn.classList.remove('hidden'); // Réaffiche le bouton d'ouverture
-    explanationContent.innerHTML = '<p>Cliquez sur "Expliquer le code" dans les éditeurs pour obtenir une explication ici.</p><p>Utilisez le champ ci-dessous pour demander de l\'aide à l\'IA.</p>'; // Réinitialise le contenu
+    // Ne pas effacer le contenu ici pour conserver l'historique
     aiGenerationPrompt.value = ''; // Efface le prompt de génération
 });
 
@@ -611,6 +625,8 @@ openExplanationPanelBtn.addEventListener('click', () => {
     explanationPanel.classList.add('active');
     explanationBackdrop.classList.add('active');
     openExplanationPanelBtn.classList.add('hidden'); // Cache le bouton d'ouverture
+    // Assurez-vous que le panneau défile vers le bas si de l'historique est déjà là
+    explanationContent.scrollTop = explanationContent.scrollHeight;
 });
 
 // Ajout de l'écouteur d'événements pour le backdrop (fermer le panneau en cliquant à l'extérieur)
@@ -618,7 +634,7 @@ explanationBackdrop.addEventListener('click', () => {
     explanationPanel.classList.remove('active');
     explanationBackdrop.classList.remove('active');
     openExplanationPanelBtn.classList.remove('hidden'); // Réaffiche le bouton d'ouverture
-    explanationContent.innerHTML = '<p>Cliquez sur "Expliquer le code" dans les éditeurs pour obtenir une explication ici.</p><p>Utilisez le champ ci-dessous pour demander de l\'aide à l\'IA.</p>'; // Réinitialise le contenu
+    // Ne pas effacer le contenu ici pour conserver l'historique
     aiGenerationPrompt.value = ''; // Efface le prompt de génération
 });
 
@@ -642,7 +658,7 @@ imageUpload.addEventListener('change', (event) => {
             explanationPanel.classList.remove('active');
             explanationBackdrop.classList.remove('active');
             openExplanationPanelBtn.classList.remove('hidden'); // Réaffiche le bouton d'ouverture
-            explanationContent.innerHTML = '<p>Cliquez sur "Expliquer le code" dans les éditeurs pour obtenir une explication ici.</p><p>Utilisez le champ ci-dessous pour demander de l\'aide à l\'IA.</p>'; // Réinitialise le contenu
+            // Ne pas effacer le contenu ici pour conserver l'historique
             aiGenerationPrompt.value = ''; // Efface le prompt de génération
 
             const reader = new FileReader();
