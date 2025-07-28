@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur de Code en Temps Réel</title>
+    <!-- Chargement de Tailwind CSS depuis un CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chargement du CSS de CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <!-- Chargement du CSS du module de dialogue de CodeMirror (pour la barre de recherche) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.css">
+    <!-- Lien vers le fichier CSS externe (vos styles personnalisés) -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+        Éditeur de Code Interactif
+    </h1>
+
+    <!-- Bouton pour ouvrir le panneau d'explication/aide IA -->
+    <button id="openExplanationPanelBtn" class="fixed top-4 left-4 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 ease-in-out">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+    </button>
+
+    <!-- Backdrop pour le panneau coulissant -->
+    <div id="explanationBackdrop" class="explanation-backdrop"></div>
+
+    <!-- Nouveau Panneau d'explication IA (coulissant) -->
+    <div id="explanationPanel" class="explanation-panel">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-gray-700">Explication & Aide IA</h2>
+            <button id="closeExplanationBtn" class="close-btn" title="Fermer le panneau">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                    <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Contenu de l'explication/aide -->
+        <div id="explanationContent" class="explanation-content flex-grow overflow-y-auto text-gray-700">
+            <p>Cliquez sur "Expliquer le code" dans les éditeurs pour obtenir une explication ici.</p>
+            <p>Utilisez le champ ci-dessous pour demander de l'aide à l'IA.</p>
+        </div>
+
+        <!-- Section pour l'aide à la génération IA -->
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <h3 class="text-md font-semibold text-gray-700 mb-2">Aide à la Génération IA</h3>
+            <textarea id="aiGenerationPrompt" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Ex: Génère un bouton de connexion avec Tailwind CSS..."></textarea>
+            <button id="generateCodeBtn" class="action-btn w-full mt-2 bg-purple-600 hover:bg-purple-700">Générer du code</button>
+        </div>
+    </div>
+
+    <div class="main-layout-container w-full max-w-6xl">
+        <!-- Conteneur principal des éditeurs et de la prévisualisation -->
+        <div class="code-editor-grid">
+            <!-- Panneau de l'éditeur HTML -->
+            <div class="editor-panel">
+                <div class="flex justify-between items-center mb-2">
+                    <label for="htmlCodeEditor" class="text-lg font-semibold text-gray-700">HTML</label>
+                    <div class="flex space-x-2">
+                        <!-- Bouton Expliquer le code HTML -->
+                        <button id="explainHtmlBtn" class="action-btn">Expliquer le code ✨</button>
+                        <!-- Icône SVG pour le bouton de recherche HTML -->
+                        <svg id="searchHtml" class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z"/>
+                        </svg>
+                        <!-- Icône SVG pour le bouton de copie HTML -->
+                        <svg id="copyHtml" class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM15 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H15C16.1 23 17 22.1 17 21V7C17 5.9 16.1 5 15 5ZM15 21H8V7H15V21Z"/>
+                        </svg>
+                    </div>
+                </div>
+                <!-- Div où CodeMirror sera initialisé pour HTML -->
+                <div id="htmlCodeEditor" class="code-editor flex-grow rounded-lg overflow-hidden"></div>
+            </div>
+
+            <!-- Panneau de l'éditeur JavaScript -->
+            <div class="editor-panel">
+                <div class="flex justify-between items-center mb-2">
+                    <label for="jsCodeEditor" class="text-lg font-semibold text-gray-700">JavaScript</label>
+                    <div class="flex space-x-2">
+                        <!-- Bouton Expliquer le code JavaScript -->
+                        <button id="explainJsBtn" class="action-btn">Expliquer le code ✨</button>
+                        <!-- Icône SVG pour le bouton de recherche JavaScript -->
+                        <svg id="searchJs" class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z"/>
+                        </svg>
+                        <!-- Icône SVG pour le bouton de copie JavaScript -->
+                        <svg id="copyJs" class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM15 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H15C16.1 23 17 22.1 17 21V7C17 5.9 16.1 5 15 5ZM15 21H8V7H15V21Z"/>
+                        </svg>
+                    </div>
+                </div>
+                <!-- Div où CodeMirror sera initialisé pour JavaScript -->
+                <div id="jsCodeEditor" class="code-editor flex-grow rounded-lg overflow-hidden"></div>
+            </div>
+
+            <!-- Panneau de l'éditeur CSS -->
+            <div class="editor-panel">
+                <div class="flex justify-between items-center mb-2">
+                    <label for="cssCodeEditor" class="text-lg font-semibold text-gray-700">CSS</label>
+                    <div class="flex space-x-2">
+                        <!-- Bouton Expliquer le code CSS -->
+                        <button id="explainCssBtn" class="action-btn">Expliquer le code ✨</button>
+                        <!-- Icône SVG pour le bouton de recherche CSS -->
+                        <svg id="searchCss" class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z"/>
+                        </svg>
+                        <!-- Icône SVG pour le bouton de copie CSS -->
+                        <svg id="copyCss" class="copy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM15 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H15C16.1 23 17 22.1 17 21V7C17 5.9 16.1 5 15 5ZM15 21H8V7H15V21Z"/>
+                        </svg>
+                    </div>
+                </div>
+                <!-- Div où CodeMirror sera initialisé pour CSS -->
+                <div id="cssCodeEditor" class="code-editor flex-grow rounded-lg overflow-hidden"></div>
+            </div>
+
+            <!-- Panneau de prévisualisation -->
+            <div class="editor-panel">
+                <div class="flex justify-between items-center mb-2">
+                    <label for="previewFrame" class="text-lg font-semibold text-gray-700">Prévisualisation en Temps Réel</label>
+                    <div class="flex space-x-2">
+                        <button id="desktopViewBtn" class="view-toggle-btn active" title="Vue Bureau">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                <path d="M4 3H20C21.1046 3 22 3.89543 22 5V17C22 18.1046 21.1046 19 20 19H15.5L12 22.5L8.5 19H4C2.89543 19 2 18.1046 2 17V5C2 3.89543 2.89543 3 4 3ZM4 5V17H20V5H4Z" />
+                            </svg>
+                        </button>
+                        <button id="mobileViewBtn" class="view-toggle-btn" title="Vue Smartphone (Pixel 8 Pro)">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                                <path d="M7 2H17C18.1046 2 19 2.89543 19 4V20C19 21.1046 18.1046 22 17 22H7C5.89543 22 5 21.1046 5 20V4C5 2.89543 5.89543 2 7 2ZM7 4V20H17V4H7ZM10 18H14V19H10V18Z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <!-- Nouveau conteneur pour le cadre de l'appareil (PC ou mobile) -->
+                <div id="previewDeviceFrame" class="flex-grow flex items-center justify-center relative">
+                    <iframe id="previewFrame" class="rounded-xl shadow-lg w-full h-full"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteneur pour le bouton de chargement de fichier -->
+    <div class="file-input-container w-full max-w-6xl">
+        <input type="file" id="imageUpload" accept="image/png, image:jpeg, image:gif">
+        <label for="imageUpload" class="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-200 ease-in-out">
+            Charger une image locale
+        </label>
+        <span id="fileNameDisplay" class="file-name-display">Aucun fichier sélectionné</span>
+    </div>
+
+    <!-- Message Box pour les notifications temporaires (succès, erreur, chargement) -->
+    <div id="messageBox" style="margin-top: 20px; padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 5px; display: none; text-align: center; font-weight: bold;"></div>
+
+    <!-- Chargement du JavaScript de CodeMirror -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <!-- Chargement des modes de CodeMirror pour la coloration syntaxique -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/htmlmixed/htmlmixed.min.js"></script>
+    <!-- Chargement des modules de recherche et de dialogue de CodeMirror -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/searchcursor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/search/search.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/dialog/dialog.min.js"></script>
+    <!-- Chargement de marked.js pour le rendu Markdown (VERSION MISE À JOUR) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.1/lib/marked.umd.min.js"></script>
+    <!-- Lien vers le fichier JavaScript externe (votre script principal) -->
+    <script src="script.js"></script>
+</body>
+</html>

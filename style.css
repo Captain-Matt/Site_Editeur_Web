@@ -1,0 +1,479 @@
+/* Styles personnalisés pour la mise en page et l'apparence */
+html, body {
+    height: 100%; /* S'assure que html et body prennent toute la hauteur de la fenêtre */
+    margin: 0; /* Supprime les marges par défaut */
+    padding: 0; /* Supprime les paddings par défaut */
+}
+
+html {
+    overflow: hidden; /* Empêche le défilement global de la page */
+}
+
+body {
+    font-family: 'Inter', sans-serif; /* Utilisation de la police Inter */
+    background-color: #e8f0f3; /* Un bleu très léger pour un fond plus doux */
+    display: flex; /* Utilise flexbox pour organiser les éléments verticalement */
+    flex-direction: column; /* Organise les éléments en colonne */
+    align-items: center; /* Centre les éléments horizontalement */
+    padding: 0.5rem; /* Padding global réduit pour plus d'espace */
+    box-sizing: border-box; /* Inclut le padding dans la hauteur totale */
+    overflow-y: auto; /* Permet le défilement vertical du corps si le contenu dépasse */
+}
+
+h1 {
+    margin-bottom: 0.5rem; /* Marge sous le titre ajustée */
+    color: #333; /* Couleur du texte du titre */
+    text-align: center;
+    font-size: 2.25rem; /* Taille de police plus grande */
+    font-weight: 700; /* Gras */
+}
+
+/* Nouveau conteneur principal pour le panneau d'explication et la grille des éditeurs */
+.main-layout-container {
+    display: flex; /* Utilise flexbox pour organiser les panneaux côte à côte */
+    width: 100%;
+    max-width: 6xl; /* Limite la largeur maximale */
+    flex-grow: 1; /* Permet au conteneur de prendre l'espace vertical disponible */
+    margin-bottom: 0.5rem; /* Marge en bas pour le conteneur de fichier */
+    gap: 0.75rem; /* Espacement entre les colonnes */
+}
+
+/* Styles pour le bouton d'ouverture du panneau d'explication/aide IA */
+#openExplanationPanelBtn {
+    transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out;
+    z-index: 1000; /* S'assure qu'il est au-dessus des autres éléments */
+}
+#openExplanationPanelBtn.hidden {
+    transform: translateX(-100px); /* Cache le bouton en le déplaçant hors de l'écran */
+    opacity: 0;
+}
+
+
+/* Styles pour le nouveau panneau d'explication IA (coulissant) */
+.explanation-panel {
+    position: fixed; /* Position fixe par rapport à la fenêtre */
+    top: 0;
+    left: -350px; /* Initialement caché hors de l'écran */
+    width: 350px;
+    height: 100%;
+    background-color: #ffffff;
+    box-shadow: 4px 0 12px rgba(0,0,0,0.15); /* Ombre sur le côté droit */
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    z-index: 999; /* Moins que le bouton pour qu'il soit cliquable */
+    transition: left 0.3s ease-in-out; /* Animation de glissement */
+}
+.explanation-panel.active {
+    left: 0; /* Affiche le panneau */
+}
+
+/* Styles pour le backdrop (arrière-plan sombre) */
+.explanation-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 998; /* En dessous du panneau, au-dessus du reste */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+.explanation-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+.explanation-panel .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6c7a89;
+    transition: color 0.2s ease-in-out, transform 0.1s ease-out;
+    padding: 0.25rem; /* Ajout de padding pour une meilleure zone de clic */
+    border-radius: 0.25rem; /* Légers coins arrondis */
+}
+.explanation-panel .close-btn:hover {
+    color: #34495e;
+    transform: rotate(90deg); /* Petite animation de rotation */
+}
+
+.explanation-panel .explanation-content {
+    flex-grow: 1;
+    overflow-y: auto; /* Permet le défilement du contenu de l'explication */
+    padding-right: 0.5rem; /* Pour éviter que le texte ne touche la barre de défilement */
+    line-height: 1.6;
+    font-size: 0.95rem;
+    /* white-space: pre-wrap; - Retiré, car marked.js gère mieux les retours à la ligne */
+    /* Styles pour la lisibilité du Markdown */
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: bold;
+        margin-top: 1em;
+        margin-bottom: 0.5em;
+        color: #2a64ad; /* Couleur similaire aux titres principaux */
+    }
+    h1 { font-size: 1.5em; }
+    h2 { font-size: 1.3em; }
+    h3 { font-size: 1.1em; }
+    p {
+        margin-bottom: 1em;
+    }
+    ul, ol {
+        margin-left: 1.5em;
+        margin-bottom: 1em;
+        padding: 0;
+    }
+    li {
+        margin-bottom: 0.5em;
+    }
+    strong {
+        font-weight: bold;
+    }
+    em {
+        font-style: italic;
+    }
+    code {
+        font-family: 'Cascadia Code', 'Fira Code', monospace;
+        background-color: #f0f0f0;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+    pre {
+        background-color: #e9ecef;
+        padding: 1em;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin-bottom: 1em;
+    }
+    pre code {
+        background-color: transparent;
+        padding: 0;
+        font-size: 0.85em;
+    }
+}
+
+/* Styles pour la grille des éditeurs (ancien .code-editor-container) */
+.code-editor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 0.75rem;
+    flex-grow: 1; /* Permet à la grille de prendre l'espace restant dans .main-layout-container */
+    overflow: hidden;
+}
+
+/* Styles pour chaque panneau d'éditeur (HTML, JS, CSS, Preview) */
+.editor-panel {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.3s ease-in-out;
+    background-color: #ffffff;
+    padding: 0.75rem;
+    box-sizing: border-box;
+    min-height: 0;
+    flex-basis: 0;
+}
+.editor-panel:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Styles pour les conteneurs CodeMirror */
+.code-editor {
+    height: 100%;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    flex-grow: 1;
+    flex-basis: 0;
+}
+
+/* Styles spécifiques à CodeMirror pour correspondre au design */
+.CodeMirror {
+    height: 100%;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background-color: #fcfcfc;
+    color: #333;
+    border-radius: 0.75rem;
+}
+
+.CodeMirror-scroll {
+    overflow-y: scroll !important;
+    overflow-x: auto !important;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Styles pour la gouttière (numéros de ligne) */
+.CodeMirror-gutters {
+    background-color: #2c3e50 !important;
+    color: #aebacd !important;
+    border-right: 1px solid #3a506b !important;
+    user-select: none;
+}
+
+.CodeMirror-linenumber {
+    padding: 0 0.5em !important;
+    text-align: right;
+    color: #aebacd !important;
+}
+
+/* Styles pour le curseur */
+.CodeMirror-cursor {
+    border-left: 1px solid #333 !important;
+}
+
+/* Style pour le texte sélectionné dans l'éditeur CodeMirror */
+.CodeMirror-selected {
+    background-color: #3498db !important;
+    color: white !important;
+}
+
+/* Styles pour l'iframe de prévisualisation */
+iframe {
+    background-color: #ffffff;
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+    transition: box-shadow 0.3s ease-in-out, border 0.3s ease-in-out, width 0.3s ease-in-out, height 0.3s ease-in-out;
+    min-height: 0;
+    flex-grow: 1;
+    flex-basis: 0;
+}
+
+/* Styles pour le conteneur du cadre de l'appareil */
+#previewDeviceFrame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    transition: width 0.3s ease-in-out, height 0.3s ease-in-out, border-radius 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    position: relative;
+    background-color: transparent;
+    padding: 0;
+    min-height: 0;
+}
+
+/* Classes pour les vues de l'iframe */
+#previewDeviceFrame.desktop-frame {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+#previewDeviceFrame.mobile-frame {
+    max-width: 390px;
+    max-height: 844px;
+    width: 90%;
+    height: 90%;
+    aspect-ratio: 390 / 844;
+    border: 12px solid #333;
+    border-radius: 36px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    background-color: #000;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Ajustements de l'iframe interne pour la vue mobile */
+#previewDeviceFrame.mobile-frame iframe {
+    border-radius: 24px;
+    box-shadow: none;
+}
+
+/* Ajout d'une simple "encoche" ou découpe de haut-parleur pour le cadre mobile */
+#previewDeviceFrame.mobile-frame::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 25px;
+    background-color: #333;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    z-index: 10;
+}
+
+/* Petite barre inférieure pour le cadre mobile */
+#previewDeviceFrame.mobile-frame::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 5px;
+    background-color: #555;
+    border-radius: 5px;
+    z-index: 10;
+}
+
+
+iframe.highlight-flash {
+    box-shadow: 0 0 20px 8px rgba(66, 153, 225, 0.8);
+    border: 3px solid #4299e1;
+}
+/* Style pour l'élément double-cliqué dans la prévisualisation */
+.highlighted-element {
+    outline: 3px solid #e74c3c !important;
+    box-shadow: 0 0 12px 4px rgba(231, 76, 60, 0.6) !important;
+    transition: outline 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+/* Styles pour le conteneur du chargeur de fichier */
+.file-input-container {
+    max-width: 6xl;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: #ffffff;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.file-input-container input[type="file"] {
+    display: none;
+}
+.file-input-container label {
+    background-color: #3498db;
+    color: white;
+    padding: 0.85rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s, transform 0.1s ease-out;
+}
+.file-input-container label:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+.file-input-container label:active {
+    transform: translateY(0);
+}
+.file-name-display {
+    flex-grow: 1;
+    padding: 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+    color: #4b5563;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* Style pour les icônes de copie */
+.copy-icon {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    color: #6c7a89;
+    opacity: 0.8;
+    transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+.copy-icon:hover {
+    opacity: 1;
+    color: #34495e;
+    transform: translateY(-2px);
+}
+.copy-icon:active {
+    transform: translateY(0);
+}
+/* Style pour les icônes de recherche */
+.search-icon {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    color: #6c7a89;
+    opacity: 0.8;
+    transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+.search-icon:hover {
+    opacity: 1;
+    color: #34495e;
+    transform: translateY(-2px);
+}
+.search-icon:active {
+    transform: translateY(0);
+}
+/* Styles pour les nouveaux boutons d'action (Expliquer le code) */
+.action-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+.action-btn:hover {
+    background-color: #45a049;
+    transform: translateY(-1px);
+}
+.action-btn:active {
+    transform: translateY(0);
+}
+
+
+/* Styles pour la barre de dialogue CodeMirror (recherche/remplacement) */
+.CodeMirror-dialog {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: #333;
+    color: white;
+    padding: 0.4em 0.8em;
+    font-family: monospace;
+    font-size: 0.9em;
+    overflow: hidden;
+    z-index: 10;
+    border-bottom-left-radius: 0.75rem;
+    border-bottom-right-radius: 0.75rem;
+}
+.CodeMirror-dialog input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 10em;
+    color: white;
+    font-family: monospace;
+    font-size: 0.9em;
+    padding: 0.1em 0;
+}
+.CodeMirror-dialog button {
+    font-size: 70%;
+    padding: 3px 8px;
+    line-height: normal;
+    background: #555;
+    border: none;
+    border-radius: 3px;
+    color: white;
+    cursor: pointer;
+    margin-left: 5px;
+}
+.CodeMirror-dialog button:hover {
+    background: #777;
+}
