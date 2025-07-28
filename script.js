@@ -33,7 +33,7 @@ const explanationPanel = document.getElementById('explanationPanel');
 const explanationContent = document.getElementById('explanationContent');
 const closeExplanationBtn = document.getElementById('closeExplanationBtn');
 const openExplanationPanelBtn = document.getElementById('openExplanationPanelBtn');
-const explanationBackdrop = document.getElementById('explanationBackdrop');
+const explanationBackdrop = document.getElementById('explanationBackdrop'); // Correction ici
 
 // Éléments pour l'aide à la génération IA
 const aiGenerationPrompt = document.getElementById('aiGenerationPrompt');
@@ -238,7 +238,7 @@ function highlightHtmlCode(elementOuterHTML) {
             } else if (char === '>' && i + 1 < rawHtmlContent.length && rawHtmlContent[i+1] === '<') {
                 // Skip whitespace between tags
             } else {
-                tempNormalizedEndIndex++;
+                tempNormalizedIndex++;
             }
             realEndIndex = i + 1;
         }
@@ -412,7 +412,7 @@ async function explainCode(editor, language) {
     openExplanationPanelBtn.classList.add('hidden'); // Cache le bouton d'ouverture
 
     // Affiche un message de chargement temporaire dans le panneau d'explication
-    explanationContent.innerHTML = '<p class="text-center text-gray-500">Explication du code en cours...</p>';
+    appendExplanation('<p class="text-center text-gray-500">Explication du code en cours...</p>', 'loading');
     showMessageBox(`Explication du code ${language} en cours...`, 'loading');
     console.log(`Attempting to explain ${language} code.`); // Debugging log
 
@@ -440,7 +440,7 @@ async function explainCode(editor, language) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error("API Response not OK:", errorText); // Log detailed error
-            explanationContent.innerHTML = `<p class="text-center text-red-500">Erreur: La requête à l'IA a échoué avec le statut ${response.status}.</p>`;
+            appendExplanation(`<p class="text-center text-red-500">Erreur: La requête à l'IA a échoué avec le statut ${response.status}.</p>`, 'error');
             showMessageBox(`Erreur: La requête à l'IA a échoué avec le statut ${response.status}.`, 'error');
             return;
         }
@@ -453,17 +453,17 @@ async function explainCode(editor, language) {
             const explanation = result.explanation;
             
             // RENDU MARKDOWN ICI : Utilise marked.js pour convertir le Markdown en HTML
-            explanationContent.innerHTML = marked.parse(explanation);
+            appendExplanation(marked.parse(explanation), 'success');
             
             // Masque la messageBox de chargement après l'affichage de l'explication
             showMessageBox('', 'info'); // Efface le message et le masque
         } else {
-            explanationContent.innerHTML = '<p class="text-center text-red-500">Erreur: Aucune explication générée. La structure de la réponse de l\'IA est inattendue.</p>';
+            appendExplanation('<p class="text-center text-red-500">Erreur: Aucune explication générée. La structure de la réponse de l\'IA est inattendue.</p>', 'error');
             showMessageBox('Erreur: Aucune explication générée. La structure de la réponse de l\'IA est inattendue.', 'error');
             console.error('Unexpected API response structure:', result);
         }
     } catch (error) {
-        explanationContent.innerHTML = '<p class="text-center text-red-500">Erreur lors de l\'explication du code. Veuillez réessayer.</p>';
+        appendExplanation('<p class="text-center text-red-500">Erreur lors de l\'explication du code. Veuillez réessayer.</p>', 'error');
         showMessageBox(`Erreur lors de l'explication du code ${language}. Veuillez réessayer.`, 'error');
         console.error('Error calling Gemini API:', error);
     }
@@ -485,7 +485,7 @@ async function generateCode() {
     openExplanationPanelBtn.classList.add('hidden'); // Cache le bouton d'ouverture
 
     // Affiche un message de chargement
-    explanationContent.innerHTML = '<p class="text-center text-gray-500">Génération du code en cours...</p>';
+    appendExplanation('<p class="text-center text-gray-500">Génération du code en cours...</p>', 'loading');
     showMessageBox('Génération du code en cours...', 'loading');
     
     const generationPrompt = `Générez du code (HTML, CSS, JavaScript) basé sur la description suivante. Fournissez le code dans des blocs Markdown séparés pour chaque langage (par exemple, \`\`\`html...\`\`\`, \`\`\`css...\`\`\`, \`\`\`javascript...\`\`\`). Soyez concis et n'incluez que le code pertinent. :\n\n"${promptText}"`;
@@ -508,7 +508,7 @@ async function generateCode() {
         if (!response.ok) {
             const errorText = await response.text();
             console.error("API Response not OK for code generation:", errorText);
-            explanationContent.innerHTML = `<p class="text-center text-red-500">Erreur: La requête à l'IA a échoué avec le statut ${response.status} lors de la génération de code.</p>`;
+            appendExplanation(`<p class="text-center text-red-500">Erreur: La requête à l'IA a échoué avec le statut ${response.status} lors de la génération de code.</p>`, 'error');
             showMessageBox(`Erreur: La génération de code a échoué avec le statut ${response.status}.`, 'error');
             return;
         }
@@ -519,17 +519,61 @@ async function generateCode() {
         // La réponse de la fonction Netlify contient le code généré sous la clé 'explanation'
         if (result.explanation) {
             const generatedCodeMarkdown = result.explanation;
-            explanationContent.innerHTML = marked.parse(generatedCodeMarkdown); // Rendre le Markdown en HTML
+            appendExplanation(marked.parse(generatedCodeMarkdown), 'success');
             showMessageBox('Code généré avec succès !', 'success');
         } else {
-            explanationContent.innerHTML = '<p class="text-center text-red-500">Erreur: Aucune génération de code. La structure de la réponse de l\'IA est inattendue.</p>';
+            appendExplanation('<p class="text-center text-red-500">Erreur: Aucune génération de code. La structure de la réponse de l\'IA est inattendue.</p>', 'error');
             showMessageBox('Erreur: Aucune génération de code. La structure de la réponse de l\'IA est inattendue.', 'error');
         }
     } catch (error) {
-        explanationContent.innerHTML = '<p class="text-center text-red-500">Erreur lors de la génération du code. Veuillez réessayer.</p>';
+        appendExplanation('<p class="text-center text-red-500">Erreur lors de la génération du code. Veuillez réessayer.</p>', 'error');
         showMessageBox('Erreur lors de la génération du code. Veuillez réessayer.', 'error');
         console.error('Error calling Gemini API for code generation:', error);
     }
+}
+
+/**
+ * Ajoute du contenu à l'élément explanationContent, avec un horodatage et un type.
+ * @param {string} contentHtml Le contenu HTML à ajouter.
+ * @param {string} type Le type de message (info, success, error, loading).
+ */
+function appendExplanation(contentHtml, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    let headerClass = '';
+    let headerText = '';
+
+    switch (type) {
+        case 'loading':
+            headerClass = 'text-yellow-600';
+            headerText = 'Chargement...';
+            break;
+        case 'error':
+            headerClass = 'text-red-600';
+            headerText = 'Erreur';
+            break;
+        case 'success':
+            headerClass = 'text-green-600';
+            headerText = 'Réponse IA';
+            break;
+        default:
+            headerClass = 'text-gray-600';
+            headerText = 'Info';
+            break;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'mb-4 p-3 rounded-lg shadow-sm bg-gray-50'; // Style de base pour chaque entrée
+    newEntry.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-semibold ${headerClass}">${headerText}</span>
+            <span class="text-xs text-gray-500">${timestamp}</span>
+        </div>
+        <div>${contentHtml}</div>
+    `;
+    explanationContent.appendChild(newEntry);
+
+    // Faites défiler vers le bas pour voir le nouveau contenu
+    explanationContent.scrollTop = explanationContent.scrollHeight;
 }
 
 
@@ -558,7 +602,7 @@ closeExplanationBtn.addEventListener('click', () => {
     explanationPanel.classList.remove('active');
     explanationBackdrop.classList.remove('active');
     openExplanationPanelBtn.classList.remove('hidden'); // Réaffiche le bouton d'ouverture
-    explanationContent.textContent = ''; // Efface le contenu
+    explanationContent.innerHTML = '<p>Cliquez sur "Expliquer le code" dans les éditeurs pour obtenir une explication ici.</p><p>Utilisez le champ ci-dessous pour demander de l\'aide à l\'IA.</p>'; // Réinitialise le contenu
     aiGenerationPrompt.value = ''; // Efface le prompt de génération
 });
 
@@ -574,7 +618,7 @@ explanationBackdrop.addEventListener('click', () => {
     explanationPanel.classList.remove('active');
     explanationBackdrop.classList.remove('active');
     openExplanationPanelBtn.classList.remove('hidden'); // Réaffiche le bouton d'ouverture
-    explanationContent.textContent = ''; // Efface le contenu
+    explanationContent.innerHTML = '<p>Cliquez sur "Expliquer le code" dans les éditeurs pour obtenir une explication ici.</p><p>Utilisez le champ ci-dessous pour demander de l\'aide à l\'IA.</p>'; // Réinitialise le contenu
     aiGenerationPrompt.value = ''; // Efface le prompt de génération
 });
 
@@ -598,7 +642,7 @@ imageUpload.addEventListener('change', (event) => {
             explanationPanel.classList.remove('active');
             explanationBackdrop.classList.remove('active');
             openExplanationPanelBtn.classList.remove('hidden'); // Réaffiche le bouton d'ouverture
-            explanationContent.textContent = ''; // Effacer le contenu
+            explanationContent.innerHTML = '<p>Cliquez sur "Expliquer le code" dans les éditeurs pour obtenir une explication ici.</p><p>Utilisez le champ ci-dessous pour demander de l\'aide à l\'IA.</p>'; // Réinitialise le contenu
             aiGenerationPrompt.value = ''; // Efface le prompt de génération
 
             const reader = new FileReader();
