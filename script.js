@@ -302,8 +302,8 @@ function updatePreview() {
         <body>
             ${htmlContent}
             <script>
-                // This script runs inside the iframe
-                const iframeLoadedImagesData = ${imagesDataJson}; // Inject the data
+                // CORRECTION ICI : Utilisation de 'var' pour permettre la re-déclaration
+                var iframeLoadedImagesData = ${imagesDataJson}; // Inject the data
 
                 document.addEventListener('DOMContentLoaded', () => {
                     const imgElements = document.querySelectorAll('img[data-local-image-name]');
@@ -514,7 +514,7 @@ async function generateCode() {
         }
 
         const result = await response.json();
-        console.log("API Result for code generation:", result);
+        console.log("API Result:", result);
 
         // La réponse de la fonction Netlify contient le code généré sous la clé 'explanation'
         if (result.explanation) {
